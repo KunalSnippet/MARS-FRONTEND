@@ -1,0 +1,61 @@
+export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed';
+
+export type LogEvent = {
+  ts: string;
+  stage: 'input' | 'classification' | 'routing' | 'session' | 'memory' | 'agent' | 'policy' | 'response' | 'raw';
+  level: 'info' | 'warning' | 'error';
+  agent: string | null;
+  message: string;
+  meta: Record<string, unknown>;
+};
+
+export type TaskRecord = {
+  task_id: string;
+  text: string;
+  status: TaskStatus;
+  classification: string | null;
+  confidence: number | null;
+  pipeline: string[];
+  result_markdown: string | null;
+  error: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  updated_at: string;
+};
+
+export type AgentState = {
+  id: string;
+  role: string;
+  state: string;
+  calls_made: number;
+  call_limit: number;
+  last_updated: string;
+};
+
+export type DashboardResponse = {
+  model_name: string;
+  online: boolean;
+  latency_ms: number;
+  active_agents: number;
+  waiting_agents: number;
+  completed_tasks: number;
+  failed_tasks: number;
+  detail: string | null;
+};
+
+export type MetricPoint = {
+  ts: string;
+  value: number;
+};
+
+export type MetricsResponse = {
+  total_tokens: number;
+  estimated_cost_usd: number;
+  average_latency_ms: number;
+  total_requests: number;
+  success_rate: number;
+  tokens_over_time: MetricPoint[];
+  latency_over_time: MetricPoint[];
+  requests_over_time: MetricPoint[];
+};
