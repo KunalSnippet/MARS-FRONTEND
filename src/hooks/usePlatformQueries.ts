@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getAgents } from '../api/agents';
+import { getHealth } from '../api/health';
 import { getDashboard } from '../api/dashboard';
 import { getMetrics } from '../api/metrics';
 
@@ -9,6 +10,10 @@ export function useAgents() {
 
 export function useDashboard() {
   return useQuery({ queryKey: ['dashboard'], queryFn: getDashboard, refetchInterval: 2000 });
+}
+
+export function useHealth() {
+  return useQuery({ queryKey: ['health'], queryFn: getHealth, refetchInterval: 2000 });
 }
 
 export function useMetrics() {

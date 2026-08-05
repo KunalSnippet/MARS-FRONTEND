@@ -44,6 +44,18 @@ export type DashboardResponse = {
   detail: string | null;
 };
 
+export type HealthResponse = {
+  status: 'ok';
+  requested_mode: 'auto' | 'mock' | 'real';
+  runtime_mode: 'mock' | 'real';
+  mock_mode: boolean;
+  real_mode_ready: boolean;
+  model_server_healthy: boolean | null;
+  model_server_detail: string | null;
+  model_server_models: string[];
+  kernel_import_error: string | null;
+};
+
 export type MetricPoint = {
   ts: string;
   value: number;

@@ -1,11 +1,12 @@
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
+import { RuntimeStatusCard } from './RuntimeStatusCard';
 
 const links = [
-  { to: '/', label: 'Task Console' },
-  { to: '/agents', label: 'Agent Monitor' },
-  { to: '/dashboard', label: 'Model Dashboard' },
-  { to: '/analytics', label: 'Analytics' },
-  { to: '/logs', label: 'Logs' },
+  { to: '/app/tasks', label: 'Task Console' },
+  { to: '/app/agents', label: 'Agent Monitor' },
+  { to: '/app/dashboard', label: 'Model Dashboard' },
+  { to: '/app/analytics', label: 'Analytics' },
+  { to: '/app/logs', label: 'Logs' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -13,8 +14,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="app-shell">
       <aside className="sidebar">
         <div>
-          <div className="eyebrow">MARS</div>
-          <h1>Multi-Agent Resource System</h1>
+          <Link to="/" className="brand-link">
+            <div className="eyebrow">MARS</div>
+            <h1>Multi-Agent Resource System</h1>
+          </Link>
           <p className="muted">Local-first orchestration dashboard with live task streaming.</p>
         </div>
         <nav className="nav">
@@ -24,6 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
+        <RuntimeStatusCard />
       </aside>
       <main className="main-panel">{children}</main>
     </div>
