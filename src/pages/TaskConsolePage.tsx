@@ -4,10 +4,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCreateTask, useTask, useTaskLogs } from '../hooks/useTaskStream';
 import { useRecentTaskIds } from '../hooks/useRecentTaskIds';
 import { LogFeed } from '../components/LogFeed';
+import { StateBadge } from '../components/StateBadge';
+import { LiveIndicator } from '../components/LiveIndicator';
 
 export function TaskConsolePage() {
-  const [text, setText] = useState('give me bad word');
+  const [text, setText] = useState('');
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [showLogsManually, setShowLogsManually] = useState(false);
+
   const queryClient = useQueryClient();
   const createTask = useCreateTask();
   const task = useTask(activeTaskId);
@@ -15,9 +19,11 @@ export function TaskConsolePage() {
   const { addTaskId } = useRecentTaskIds();
 
   const isRunning = task.data?.status === 'queued' || task.data?.status === 'running' || createTask.isPending;
+  const hasTaskRun = Boolean(activeTaskId || task.data || createTask.isPending);
   const result = useMemo(() => task.data?.result_markdown ?? '', [task.data?.result_markdown]);
 
   async function submit() {
+    if (!text.trim() || createTask.isPending) return;
     const response = await createTask.mutateAsync(text);
     setActiveTaskId(response.task_id);
     addTaskId(response.task_id);
@@ -25,67 +31,133 @@ export function TaskConsolePage() {
     queryClient.invalidateQueries({ queryKey: ['task-logs', response.task_id] });
   }
 
-  const taskSummary = useMemo(() => {
-    if (!task.data) {
-      return 'No task has been run yet.';
-    }
-
-    return [
-      `Status: ${task.data.status}`,
-      task.data.classification ? `Classification: ${task.data.classification}` : null,
-      task.data.confidence !== null ? `Confidence: ${Math.round(task.data.confidence * 100)}%` : null,
-      task.data.pipeline.length ? `Pipeline: ${task.data.pipeline.join(' → ')}` : null,
-    ]
-      .filter(Boolean)
-      .join(' • ');
-  }, [task.data]);
+  const pipelineBadge = useMemo(() => {
+    if (!task.data?.pipeline || task.data.pipeline.length === 0) return null;
+    return task.data.pipeline.join(' → ');
+  }, [task.data?.pipeline]);
 
   return (
     <section className="page-stack">
-      <div className="hero card hero-accent">
-        <div>
-          <div className="eyebrow">Task Console</div>
-          <h2>Submit a request and watch the pipeline stream live.</h2>
-          <p className="muted">The console polls the API for task state and structured logs. If a route ever fails, the error boundary keeps the app visible.</p>
+      <div className="page-header">
+        <div className="page-header-content">
+          <span className="page-eyebrow">Task Console</span>
+          <h1 className="page-title">What would you like MARS to do?</h1>
+          <p className="page-description">Orchestrate specialized agents locally for research, coding, and multi-step tasks.</p>
         </div>
-        <div className="hero-status">{activeTaskId ? `Task ${activeTaskId.slice(0, 8)}` : 'Idle'}</div>
+        {hasTaskRun ? <LiveIndicator dataUpdatedAt={task.dataUpdatedAt} label={isRunning ? 'Processing...' : 'Complete'} /> : null}
       </div>
 
-      <div className="grid two-up task-layout">
-        <div className="card form-card task-panel">
-          <div className="card-head">
-            <h2>Request</h2>
-            <span className="muted">Default text is ready to run</span>
-          </div>
-          <label className="field-label" htmlFor="task-input">Prompt</label>
-          <textarea id="task-input" value={text} onChange={(event) => setText(event.target.value)} rows={10} />
-          <div className="actions-row">
+      {/* Prominent Chat-App Style Input Bar */}
+      <div className="card" style={{ padding: '24px' }}>
+        <textarea
+          id="task-input"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          rows={4}
+          placeholder="Ask MARS to research, write, or build something..."
+          style={{
+            fontSize: '0.96rem',
+            borderRadius: '10px',
+            padding: '16px',
+            background: 'var(--bg)',
+            border: '1px solid var(--border)',
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+        />
+
+        <div className="actions-row" style={{ justifyContent: 'space-between', marginTop: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button className="primary-button" onClick={submit} disabled={createTask.isPending || !text.trim()}>
-              {createTask.isPending ? 'Submitting...' : 'Run Task'}
+              {createTask.isPending ? 'Routing task...' : 'Run Task'}
             </button>
-            {task.isError ? <div className="error-box">{task.error.message}</div> : null}
+            <span className="muted" style={{ fontSize: '0.78rem' }}>
+              Press Ctrl+Enter to run
+            </span>
           </div>
+
+          {!hasTaskRun ? (
+            <button
+              className="secondary-button"
+              onClick={() => setShowLogsManually(!showLogsManually)}
+              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            >
+              {showLogsManually ? 'Hide inspection feed' : 'Inspect live event feed'}
+            </button>
+          ) : null}
         </div>
 
-        <div className="card content-card task-panel">
-          <div className="card-head">
-            <h2>Task summary</h2>
-            <span className="muted">{isRunning ? 'Polling...' : task.data?.status ?? 'No task yet'}</span>
+        {createTask.isError ? (
+          <div className="error-box" style={{ marginTop: '14px' }}>
+            <div>Task submission error: {createTask.error.message}</div>
+            <div className="error-retry-notice">Check local server connection.</div>
           </div>
-          {task.isLoading ? <div className="skeleton">Waiting for task state...</div> : null}
-          <p className="muted">{taskSummary}</p>
-          {result ? <ReactMarkdown>{result}</ReactMarkdown> : <p className="muted">No output yet.</p>}
-        </div>
-
-        <div className="card content-card task-panel task-span-full">
-          <div className="card-head">
-            <h2>Live Log Feed</h2>
-            <span className="muted">Structured events from the backend</span>
-          </div>
-          {logs.isLoading ? <div className="skeleton">Loading logs...</div> : null}
-          {logs.data && logs.data.length > 0 ? <LogFeed logs={logs.data} /> : <p className="muted">No logs yet. Run a task to populate this feed.</p>}
-        </div>
+        ) : null}
       </div>
+
+      {/* Progressive Disclosure: Output, Pipeline Summary, and Logs only reveal when active */}
+      {hasTaskRun ? (
+        <div className="page-stack">
+          {/* Response Output Panel */}
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h2>Task Result</h2>
+                {pipelineBadge ? (
+                  <span className="card-subtitle">Pipeline: {pipelineBadge}</span>
+                ) : (
+                  <span className="card-subtitle">Synthesized output</span>
+                )}
+              </div>
+              {task.data?.status ? <StateBadge state={task.data.status} /> : null}
+            </div>
+
+            {task.isLoading ? (
+              <div className="skeleton">Orchestrating agents and generating response...</div>
+            ) : null}
+
+            {task.isError ? (
+              <div className="error-box">
+                <div>Unable to retrieve task response.</div>
+                <div className="error-retry-notice">Retrying automatically...</div>
+              </div>
+            ) : null}
+
+            {result ? (
+              <div style={{ fontSize: '0.94rem', lineHeight: '1.6', marginTop: '8px' }}>
+                <ReactMarkdown>{result}</ReactMarkdown>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Structured Event Stream */}
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <h2>Live Event Stream</h2>
+                <span className="card-subtitle">Kernel logs & agent execution events</span>
+              </div>
+            </div>
+
+            {logs.isLoading ? <div className="skeleton">Streaming log events...</div> : null}
+            {logs.data ? <LogFeed logs={logs.data} /> : null}
+          </div>
+        </div>
+      ) : showLogsManually ? (
+        <div className="card">
+          <div className="card-head">
+            <div>
+              <h2>Live Event Stream</h2>
+              <span className="card-subtitle">Recent task log history</span>
+            </div>
+          </div>
+          {logs.data ? <LogFeed logs={logs.data} /> : <div className="muted">No task logs recorded yet.</div>}
+        </div>
+      ) : null}
     </section>
   );
 }

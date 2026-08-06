@@ -1,47 +1,46 @@
+import { useEffect, useState } from 'react';
 import { useHealth } from '../hooks/usePlatformQueries';
-
-function statusLabel(runtimeMode: string, healthy: boolean | null) {
-  if (runtimeMode === 'mock') {
-    return 'Mock mode';
-  }
-
-  if (healthy) {
-    return 'Real mode ready';
-  }
-
-  return 'Real mode blocked';
-}
+import { StateBadge } from './StateBadge';
 
 export function RuntimeStatusCard() {
   const health = useHealth();
+  const [showDetails, setShowDetails] = useState(false);
 
   const runtimeMode = health.data?.runtime_mode ?? 'mock';
   const healthy = health.data?.model_server_healthy ?? null;
-  const badgeClass = runtimeMode === 'real' && healthy ? 'completed' : runtimeMode === 'mock' ? 'running' : 'failed';
+  const isLive = runtimeMode === 'real' && healthy;
+
+  // Log raw technical errors silently to console for developers
+  useEffect(() => {
+    if (health.data?.model_server_detail && !healthy) {
+      console.debug('[MARS Runtime] Backend health detail:', health.data.model_server_detail);
+    }
+  }, [health.data, healthy]);
 
   return (
     <div className="runtime-card">
       <div className="runtime-card-header">
-        <div>
-          <div className="eyebrow">Runtime</div>
-          <div className="runtime-title">Backend mode</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="runtime-title">Backend</span>
+          <button
+            className="info-toggle-btn"
+            onClick={() => setShowDetails(!showDetails)}
+            title="Toggle technical runtime details"
+            aria-label="Toggle details"
+          >
+            {showDetails ? '✕' : 'ℹ️'}
+          </button>
         </div>
-        <span className={`badge ${badgeClass}`}>{statusLabel(runtimeMode, healthy)}</span>
+        <StateBadge state={isLive ? 'ready' : 'idle'} showDot={false} />
       </div>
 
-      {health.isLoading ? <div className="muted runtime-detail">Checking health...</div> : null}
-
-      {health.data ? (
+      {showDetails ? (
         <div className="runtime-detail">
-          <div>Requested: {health.data.requested_mode}</div>
-          <div>Running: {health.data.runtime_mode}</div>
-          <div>LM Studio: {health.data.model_server_healthy ? 'Online' : 'Offline'}</div>
-          {health.data.model_server_detail ? <div>{health.data.model_server_detail}</div> : null}
-          {health.data.kernel_import_error ? <div>Import note: {health.data.kernel_import_error}</div> : null}
+          <div>Engine: {isLive ? 'LM Studio' : 'Local Mock'}</div>
+          <div>Mode: {runtimeMode} ({health.data?.requested_mode ?? 'auto'})</div>
+          <div>Status: {healthy ? 'Online' : 'Offline (Example Data)'}</div>
         </div>
       ) : null}
-
-      {health.isError ? <div className="error-box">{health.error.message}</div> : null}
     </div>
   );
 }

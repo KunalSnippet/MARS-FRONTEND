@@ -3,9 +3,22 @@ import { useQueries } from '@tanstack/react-query';
 import { getTaskLogs } from '../api/tasks';
 import { LogFeed } from '../components/LogFeed';
 import { useRecentTaskIds } from '../hooks/useRecentTaskIds';
+import { LiveIndicator } from '../components/LiveIndicator';
 import type { LogEvent } from '../types';
 
-const stageOptions: Array<LogEvent['stage'] | 'all'> = ['all', 'input', 'classification', 'routing', 'session', 'memory', 'agent', 'policy', 'response', 'raw'];
+const stageOptions: Array<LogEvent['stage'] | 'all'> = [
+  'all',
+  'input',
+  'classification',
+  'routing',
+  'session',
+  'memory',
+  'agent',
+  'policy',
+  'response',
+  'raw',
+];
+
 const levelOptions: Array<LogEvent['level'] | 'all'> = ['all', 'info', 'warning', 'error'];
 
 export function LogsPage() {
@@ -21,45 +34,63 @@ export function LogsPage() {
     })),
   });
 
+  const isFetching = queries.some((q) => q.isFetching);
+  const latestUpdatedAt = useMemo(() => {
+    return Math.max(...queries.map((q) => q.dataUpdatedAt || 0), 0) || undefined;
+  }, [queries]);
+
   const logs = useMemo(() => {
-    return queries.flatMap((query) => query.data ?? []).filter((item) => {
-      const stageMatch = stage === 'all' || item.stage === stage;
-      const levelMatch = level === 'all' || item.level === level;
-      return stageMatch && levelMatch;
-    });
+    return queries
+      .flatMap((query) => query.data ?? [])
+      .filter((item) => {
+        const stageMatch = stage === 'all' || item.stage === stage;
+        const levelMatch = level === 'all' || item.level === level;
+        return stageMatch && levelMatch;
+      });
   }, [queries, stage, level]);
 
   return (
     <section className="page-stack">
-      <div className="hero card">
-        <div>
-          <div className="eyebrow">Logs</div>
-          <h2>Cross-task event stream.</h2>
-          <p className="muted">Filters apply across the recent task history stored in the browser.</p>
+      <div className="page-header">
+        <div className="page-header-content">
+          <span className="page-eyebrow">Insights</span>
+          <h1 className="page-title">Logs</h1>
+          <p className="page-description">Cross-task event stream color-coded by severity level and pipeline stage.</p>
         </div>
+        <LiveIndicator dataUpdatedAt={latestUpdatedAt} label={isFetching ? 'Streaming logs' : 'Idle'} />
       </div>
 
-      <div className="card form-card">
+      <div className="card">
         <div className="filters-row">
           <label>
-            Stage
+            Pipeline Stage
             <select value={stage} onChange={(event) => setStage(event.target.value as typeof stage)}>
-              {stageOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+              {stageOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
             </select>
           </label>
           <label>
-            Level
+            Log Level
             <select value={level} onChange={(event) => setLevel(event.target.value as typeof level)}>
-              {levelOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+              {levelOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
             </select>
           </label>
         </div>
       </div>
 
-      {taskIds.length === 0 ? <div className="card skeleton">Run a task to populate recent logs.</div> : null}
-      <div className="card content-card">
-        <LogFeed logs={logs} />
-      </div>
+      {taskIds.length === 0 ? (
+        <div className="card empty-state">
+          <div className="empty-state-title">No task history in browser</div>
+          <p>Run a task in the Task Console to populate live cross-task logs.</p>
+        </div>
+      ) : (
+        <div className="card">
+          <LogFeed logs={logs} />
+        </div>
+      )}
     </section>
   );
 }
