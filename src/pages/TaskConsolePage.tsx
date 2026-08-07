@@ -93,8 +93,16 @@ export function TaskConsolePage() {
 
         {createTask.isError ? (
           <div className="error-box" style={{ marginTop: '14px' }}>
-            <div>Task submission error: {createTask.error.message}</div>
-            <div className="error-retry-notice">Check local server connection.</div>
+            <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+              {createTask.error.message.includes('Failed to fetch')
+                ? 'Backend Offline (Cannot connect to http://localhost:8000)'
+                : `Task submission error: ${createTask.error.message}`}
+            </div>
+            <div className="error-retry-notice">
+              {createTask.error.message.includes('Failed to fetch')
+                ? 'Your Python backend server is not running. Please open a terminal in MARS-BE and run: python -m uvicorn api.main:app --reload --port 8000'
+                : 'Check local server connection and try again.'}
+            </div>
           </div>
         ) : null}
       </div>
