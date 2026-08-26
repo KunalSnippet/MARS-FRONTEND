@@ -10,19 +10,17 @@ This is the standalone web dashboard for MARS. It is a Vite + React + TypeScript
 - Analytics for token, latency, and request trends
 - Logs for recent structured events with filters
 
-### Local Setup
+## How to Run
 
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run the development server:
-
-```bash
-npm run dev
-```
+1. Open a terminal and navigate to the `MARS-FE` directory.
+2. Install the necessary NPM dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server (we recommend starting the `MARS-BE` backend first):
+   ```bash
+   npm run dev
+   ```
 
 Build for production:
 

@@ -1,4 +1,5 @@
 import type { LogEvent } from '../types';
+import { StateBadge } from './StateBadge';
 
 export function LogFeed({ logs }: { logs: LogEvent[] }) {
   if (!logs || logs.length === 0) {
@@ -17,7 +18,7 @@ export function LogFeed({ logs }: { logs: LogEvent[] }) {
           <div className="log-meta">
             <span>{new Date(log.ts).toLocaleTimeString()}</span>
             <span className="log-stage">[{log.stage}]</span>
-            <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>{log.level}</span>
+            <StateBadge state={log.level} />
             {log.agent ? <span style={{ color: 'var(--accent)' }}>@{log.agent}</span> : null}
           </div>
           <div className="log-message">{log.message}</div>
