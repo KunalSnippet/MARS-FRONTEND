@@ -71,3 +71,46 @@ export type MetricsResponse = {
   latency_over_time: MetricPoint[];
   requests_over_time: MetricPoint[];
 };
+
+export type TaskSummary = {
+  id: string;
+  input_text: string;
+  status: TaskStatus;
+  created_at: string;
+  completed_at: string | null;
+};
+
+export type AgentRun = {
+  task_id: string;
+  agent_id: string;
+  role: string;
+  state: string;
+  started_at: string;
+  ended_at: string | null;
+  calls_made: number;
+  call_limit: number | null;
+  tokens_used: number | null;
+  avg_response_ms: number | null;
+};
+
+export type AgentDetail = {
+  agent_id: string;
+  role: string;
+  recent_runs: AgentRun[];
+  total_calls: number;
+  avg_tokens: number | null;
+  failure_count: number;
+};
+
+export type ErrorEvent = {
+  task_id: string;
+  input_text: string;
+  ts: string;
+  stage: LogEvent['stage'];
+  level: LogEvent['level'];
+  agent: string | null;
+  message: string;
+  suggested_fix: string;
+  meta: Record<string, unknown>;
+};
+

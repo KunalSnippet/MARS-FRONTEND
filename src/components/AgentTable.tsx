@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { AgentState } from '../types';
 import { StateBadge } from './StateBadge';
 
 export function AgentTable({ agents }: { agents: AgentState[] }) {
+  const navigate = useNavigate();
   const prevAgentsRef = useRef<Record<string, string>>({});
   const [flashingIds, setFlashingIds] = useState<Record<string, boolean>>({});
 
@@ -44,16 +46,31 @@ export function AgentTable({ agents }: { agents: AgentState[] }) {
               <th>Status</th>
               <th>Calls Made</th>
               <th>Call Limit</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {agents.map((agent) => (
-              <tr key={agent.id} className={flashingIds[agent.id] ? 'row-flash' : ''}>
-                <td className="cell-mono" style={{ fontWeight: 600 }}>{agent.id}</td>
+              <tr
+                key={agent.id}
+                className={flashingIds[agent.id] ? 'row-flash' : ''}
+                onClick={() => navigate(`/app/agents/${agent.id}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                <td className="cell-mono" style={{ fontWeight: 600, color: 'var(--accent)' }}>
+                  {agent.id}
+                </td>
                 <td style={{ textTransform: 'capitalize' }}>{agent.role}</td>
-                <td><StateBadge state={agent.state} /></td>
+                <td>
+                  <StateBadge state={agent.state} />
+                </td>
                 <td className="cell-mono">{agent.calls_made}</td>
                 <td className="cell-mono">{agent.call_limit}</td>
+                <td>
+                  <span className="muted" style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>
+                    View Detail →
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -62,3 +79,4 @@ export function AgentTable({ agents }: { agents: AgentState[] }) {
     </div>
   );
 }
+

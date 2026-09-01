@@ -7,6 +7,7 @@ const navGroups = [
     items: [
       { to: '/app/tasks', label: 'Task Console' },
       { to: '/app/agents', label: 'Agent Monitor' },
+      { to: '/app/history', label: 'Task History' },
     ],
   },
   {
@@ -15,9 +16,11 @@ const navGroups = [
       { to: '/app/dashboard', label: 'Model Dashboard' },
       { to: '/app/analytics', label: 'Analytics' },
       { to: '/app/logs', label: 'Logs' },
+      { to: '/app/debugger', label: 'Failure Debugger' },
     ],
   },
 ];
+
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
